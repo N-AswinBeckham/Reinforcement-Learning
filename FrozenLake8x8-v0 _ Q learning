@@ -1,0 +1,55 @@
+
+import gym   # Create an environment of FrozenLake8x8-v0:
+env = gym.make("FrozenLake8x8-v0")
+import random
+import numpy as np
+q_table = np.zeros([env.observation_space.n, env.action_space.n])
+
+alpha = 0.1  # hyper parameters
+gamma = 0.99
+epsilon = 1
+min_epsilon=0.01
+epsilon_decay=0.001
+max_epsilon =1 
+episodes = 10000
+max_step_per_ep =100
+total_reward =[]
+episode_epochs = []
+for episode in range(episodes):  
+    
+    state = env.reset()
+    done = 0
+    episode_reward =0
+
+    
+    for step in range(max_step_per_ep):
+
+        if random.uniform(0, 1) < epsilon:  # exploration
+            action = env.action_space.sample() 
+        else:
+            action = np.argmax(q_table[state,:])   # exploitation
+
+        next_state, reward, done, info = env.step(action)         
+        q_table[state, action] = q_table[state, action] * (1 - alpha) + alpha * (reward + gamma * np.max(q_table[next_state, :]))
+        episode_reward += reward
+        state = next_state
+    
+        if done == True: 
+            break
+
+    epsilon =  min_epsilon + (max_epsilon - min_epsilon) * np.exp(-epsilon_decay*episode)
+    total_reward.append(episode_reward)
+    episode_epochs.append(step)    
+
+print("********Average reward per thousand episodes********\n")
+print("average epochs per episode :", sum(episode_epochs)/episodes)
+# Calculate and print the average reward per thousand episodes
+rewards_per_thousand_episodes = np.split(np.array(total_reward),episodes/1000)
+count = 1000
+
+print("********Average reward per thousand episodes********\n")
+for r in rewards_per_thousand_episodes:
+    print(count, ": ", str(sum(r/1000)))
+    count += 1000
+print("\n\n********Q-table********\n")
+print(q_table)
